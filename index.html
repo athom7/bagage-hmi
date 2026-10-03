@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bagage-HMI – bagagesorteringsanlæg</title>
+  <meta name="description" content="Browserbaseret HMI-simulator af et bagagesorteringsanlæg i en lufthavn, styret af en PLC-scancyklus.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2322303c'/%3E%3Crect x='6' y='13' width='20' height='13' rx='3' fill='%2358a6ff'/%3E%3Cpath d='M12 13v-3h8v3' stroke='%2358a6ff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/hmi.css">
+</head>
+<body>
+  <header class="statusbar">
+    <h1>Bagagesortering <span class="sub">Terminal 2 · simulator</span></h1>
+    <dl class="status-items" aria-label="Status">
+      <div><dt>PLC</dt><dd><span id="plc-state" class="run">RUN</span></dd></div>
+      <div><dt>Scan #</dt><dd id="scan-count">0</dd></div>
+      <div><dt>Scanperiode</dt><dd>100 ms</dd></div>
+      <div><dt>Programtid</dt><dd><span id="scan-exec">0.00</span> ms</dd></div>
+      <div><dt>Drift</dt><dd><span id="lamp-run" class="lamp" title="Q_Lamp_Run"></span></dd></div>
+      <div><dt>Tjekket ind</dt><dd id="st-checkedin">0</dd></div>
+      <div><dt>På anlægget</dt><dd id="st-onplant">0</dd></div>
+      <div><dt>Leveret</dt><dd id="st-delivered">0</dd></div>
+      <div><dt>Afvist</dt><dd id="st-rejected">0</dd></div>
+    </dl>
+  </header>
+
+  <main class="layout">
+    <section class="plant-area" aria-label="Anlæg">
+      <svg id="plant" viewBox="0 54 1200 446" role="img" aria-label="Bagagesorteringsanlæg med to check-in-skranker, hovedbånd, tre klapper og tre gate-bånd"></svg>
+      <div class="controlbar">
+        <label class="inline"><input type="checkbox" id="auto-on"> Automatiske kufferter</label>
+        <label class="inline">Tempo <input type="range" id="auto-rate" min="2" max="30" value="12"> <output id="auto-rate-out">12</output> pr. minut</label>
+        <button type="button" id="btn-reset" class="secondary">Nulstil anlæg</button>
+      </div>
+      <ul class="legend" aria-label="Tegnforklaring">
+        <li><span class="sw sw-run"></span>Bånd kører</li>
+        <li><span class="sw sw-pe"></span>Fotocelle afbrudt</li>
+        <li><span class="sw sw-ext"></span>Klap udslået</li>
+        <li><span class="sw sw-g1"></span>Gate 1</li>
+        <li><span class="sw sw-g2"></span>Gate 2</li>
+        <li><span class="sw sw-g3"></span>Gate 3</li>
+        <li><span class="sw sw-g0"></span>Ugyldig destination</li>
+      </ul>
+    </section>
+
+    <aside class="info" aria-live="polite" aria-label="Detaljer">
+      <div id="info-body"></div>
+      <div id="info-actions" class="actions"></div>
+    </aside>
+  </main>
+
+  <section class="alarms" aria-label="Alarmer">
+    <h2>Alarmer</h2>
+    <p class="placeholder">Alarmlisten med tidsstempel og kvittering kommer i fase 3.</p>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

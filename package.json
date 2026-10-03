@@ -1,0 +1,9 @@
+{
+  "name": "bagage-hmi",
+  "private": true,
+  "type": "module",
+  "description": "Browserbaseret HMI-simulator af et bagagesorteringsanlæg. Ingen afhængigheder.",
+  "scripts": {
+    "test": "node --test"
+  }
+}
