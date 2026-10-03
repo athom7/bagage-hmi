@@ -1,0 +1,9 @@
+# Static site: no build step. Set "Base directory" to bagage-hmi in Netlify
+# if the folder lives inside a larger repository.
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*.st"
+  [headers.values]
+    Content-Type = "text/plain; charset=utf-8"
