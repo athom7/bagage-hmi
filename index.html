@@ -16,20 +16,34 @@
       <div><dt>Scan #</dt><dd id="scan-count">0</dd></div>
       <div><dt>Scanperiode</dt><dd>100 ms</dd></div>
       <div><dt>Programtid</dt><dd><span id="scan-exec">0.00</span> ms</dd></div>
-      <div><dt>Drift</dt><dd><span id="lamp-run" class="lamp" title="Q_Lamp_Run"></span></dd></div>
+      <div><dt>Tilstand</dt><dd id="plant-state">–</dd></div>
+      <div><dt>Drift</dt><dd><span id="lamp-run" class="lamp run" title="Q_Lamp_Run"></span></dd></div>
+      <div><dt>Fejl</dt><dd><span id="lamp-fault" class="lamp fault" title="Q_Lamp_Fault"></span></dd></div>
       <div><dt>Tjekket ind</dt><dd id="st-checkedin">0</dd></div>
       <div><dt>På anlægget</dt><dd id="st-onplant">0</dd></div>
       <div><dt>Leveret</dt><dd id="st-delivered">0</dd></div>
       <div><dt>Afvist</dt><dd id="st-rejected">0</dd></div>
     </dl>
+    <div id="plc-error" class="plc-error" role="alert" hidden></div>
   </header>
 
   <main class="layout">
     <section class="plant-area" aria-label="Anlæg">
       <svg id="plant" viewBox="0 54 1200 446" role="img" aria-label="Bagagesorteringsanlæg med to check-in-skranker, hovedbånd, tre klapper og tre gate-bånd"></svg>
-      <div class="controlbar">
+      <div class="opbar" role="group" aria-label="Betjeningspanel">
+        <span class="bar-title">Betjening</span>
+        <button type="button" id="op-start" class="op start">Start</button>
+        <button type="button" id="op-stop" class="op stop">Stop</button>
+        <button type="button" id="op-estop" class="op estop" aria-pressed="false">NØDSTOP</button>
+        <button type="button" id="op-reset" class="op">Reset</button>
+        <button type="button" id="plc-restart" class="op" hidden>Genstart PLC</button>
+      </div>
+      <div class="controlbar" role="group" aria-label="Simulering">
+        <span class="bar-title">Simulering</span>
         <label class="inline"><input type="checkbox" id="auto-on"> Automatiske kufferter</label>
         <label class="inline">Tempo <input type="range" id="auto-rate" min="2" max="30" value="12"> <output id="auto-rate-out">12</output> pr. minut</label>
+        <button type="button" id="sim-pause" class="secondary" aria-pressed="false">Pause</button>
+        <button type="button" id="sim-step" class="secondary">Enkelt scan</button>
         <button type="button" id="btn-reset" class="secondary">Nulstil anlæg</button>
       </div>
       <ul class="legend" aria-label="Tegnforklaring">
@@ -48,6 +62,23 @@
       <div id="info-actions" class="actions"></div>
     </aside>
   </main>
+
+  <section class="stview" id="stview" aria-label="PLC-program">
+    <div class="stview-head">
+      <h2>PLC-program <code>plc/program.st</code> <small id="st-title"></small></h2>
+      <div id="st-fifo" class="fifo" title="Indholdet af sporingskøerne (gate-nummer pr. kuffert, ældste først)"></div>
+      <div class="st-actions">
+        <button type="button" id="st-edit" class="secondary">Rediger</button>
+        <button type="button" id="st-load" hidden>Indlæs program</button>
+        <button type="button" id="st-cancel" class="secondary" hidden>Annullér</button>
+        <button type="button" id="st-revert" class="secondary">Gendan original</button>
+      </div>
+    </div>
+    <p class="st-hint">Grøn = TRUE, grå = FALSE, tal og tider vises ved siden af navnet. Klik på en komponent i anlægget for at se de linjer, der styrer den. Programmet kan redigeres her: <em>Indlæs</em> kold-starter PLC'en og nulstiller anlægget.</p>
+    <div id="st-error" class="st-error" role="alert" hidden></div>
+    <div id="st-body" class="st-body" tabindex="0"></div>
+    <textarea id="st-editor" class="st-editor" spellcheck="false" aria-label="Rediger ST-program" hidden></textarea>
+  </section>
 
   <section class="alarms" aria-label="Alarmer">
     <h2>Alarmer</h2>

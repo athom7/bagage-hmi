@@ -18,7 +18,7 @@ const INPUTS = [
   bool('I_ATR_Read', 'ATR-scanner har aflæst et bagagemærke (puls på ca. 150 ms)'),
   ...each(3, (k) => bool(`I_PE_D${k}`, `Fotocelle før klap ${k} (TRUE = afbrudt)`)),
   ...each(3, (k) => bool(`I_Div${k}_Ext`, `Endestop: klap ${k} er helt udslået`)),
-  ...each(3, (k) => bool(`I_PE_G${k}`, `Fuld-fotocelle på gate-bånd ${k} (TRUE = afbrudt)`)),
+  ...each(3, (k) => bool(`I_PE_G${k}`, `Fuld-føler på gate-bånd ${k} (TRUE = afbrudt)`)),
   int('I_ATR_Dest', 'Gate-nummer fra seneste aflæsning (1–3, 0 = ingen eller ugyldig destination)'),
 ];
 

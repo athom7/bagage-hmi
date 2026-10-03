@@ -42,7 +42,7 @@ export const COUNTERS = {
   CI2: { comp: 'SKR2', name: 'Skranke 2', x: 4, y: 236, w: 62, h: 48 },
 };
 
-// Photocells. blocked = beam interrupted by a bag.
+// Photocells. blocked = beam interrupted by a bag. `reach` widens the detection field on both sides (default: a thin beam).
 const ciPos = BELTS.CI1.length - 45;
 export const SENSORS = [
   { id: 'PE_CI1', tag: 'I_PE_CI1', belt: 'CI1', pos: ciPos, name: 'Fotocelle check-in 1', desc: 'Registrerer en kuffert ved enden af check-in-bånd 1, før sammenfletningen.' },
@@ -54,7 +54,9 @@ export const SENSORS = [
   })),
   ...DIVERTERS.map((d) => ({
     id: `PE_G${d.id}`, tag: `I_PE_G${d.id}`, belt: 'G' + d.id, pos: BELTS['G' + d.id].length - 85,
-    name: `Fuld-fotocelle gate ${d.id}`, desc: `Afbrudt, når der står tre kufferter eller flere på gate-bånd ${d.id}, dvs. båndet er ved at være fuldt.`,
+    // Diffuse sensor with a wide detection field: it must not "see through" the small gaps between stationary bags.
+    reach: 8,
+    name: `Fuld-føler gate ${d.id}`, desc: `Afbrudt, når der står tre kufferter eller flere på gate-bånd ${d.id}, dvs. båndet er ved at være fuldt. Føleren har et bredt detektionsfelt, så den ikke slipper igennem mellemrum mellem stillestående kufferter.`,
   })),
 ];
 

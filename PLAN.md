@@ -91,7 +91,7 @@ bagage-hmi/
 - **"Logiklinjen" for en komponent:** Parseren noterer, hvilke linjer der skriver til hvert output. Klik på klap 2 viser fx linje 84–88 i `program.st` med live-værdier for hver variabel.
 - **Fejl i ST = CPU i STOP:** Parse- og kørselsfejl sætter PLC'en i STOP, alle outputs går FALSE, og fejlen vises med linjenummer.
 - **Nødstop som NC-input** (`I_EStop_OK`): kabelbrud stopper også anlægget. Efter udløsning kræves `Reset` (selvhold), før man kan starte igen.
-- **Merge-logik:** Skranker skiftes til at sende (fairness) og venter, til merge-zonen har været fri i X ms (`TON`). Det giver luft mellem kufferterne.
+- **Merge-logik:** Skranker skiftes til at sende (fairness) og venter, til merge-zonen har været fri i 700 ms *kørende* hovedbånd (`TON`). Det giver luft mellem kufferterne.
 
 ---
 

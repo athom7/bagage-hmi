@@ -4,6 +4,6 @@
   publish = "."
 
 [[headers]]
-  for = "/*.st"
+  for = "/plc/*"
   [headers.values]
     Content-Type = "text/plain; charset=utf-8"

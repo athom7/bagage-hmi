@@ -12,6 +12,9 @@ const ARM_EXT = 0.99; // arm position at which the end switch reports "extended"
 const ATR_PULSE_S = 0.15; // the scanner output stays high this long after a read
 const MAX_STEP_S = 0.02;
 const QUEUE_MAX = 6;
+// A counter hands over one bag at a time. Keeping a real gap between bags is what lets a photocell
+// (sampled every 100 ms by the PLC) tell two bags apart; bags closer than about 10 units would blur into one.
+const SPAWN_GAP = 80;
 
 export class Plant {
   constructor({ seed = 7 } = {}) {
@@ -33,9 +36,10 @@ export class Plant {
     for (const d of DIVERTERS) this.gates[d.id] = { loaderActive: true, nextUnload: 6 + d.id };
     this.atr = { readUntil: -1, dest: 0, lastReadAt: -10 };
     this.operator = { start: false, stop: false, reset: false, estopOk: true };
+    this._releaseAt = {}; // push buttons are released automatically after a short press
     this.lamps = { run: false, fault: false };
     this.stats = { checkedIn: 0, delivered: { 1: 0, 2: 0, 3: 0 }, rejected: 0, misrouted: 0 };
-    this.autoRate = 0; // bags per minute, all counters together
+    this.autoRate = this.autoRate || 0; // bags per minute, all counters together (a setting: survives a reset)
     this._autoAcc = 0;
   }
 
@@ -43,7 +47,7 @@ export class Plant {
 
   isBlocked(sensorId) {
     const s = SENSORS.find((x) => x.id === sensorId);
-    return this.belts[s.belt].bags.some((b) => Math.abs(b.pos - s.pos) < b.len / 2);
+    return this.belts[s.belt].bags.some((b) => Math.abs(b.pos - s.pos) < b.len / 2 + (s.reach || 0));
   }
   atrActive() { return this.time < this.atr.readUntil; }
   armExtended(divId) { return this.diverters[divId].pos >= ARM_EXT; }
@@ -59,6 +63,15 @@ export class Plant {
     return true;
   }
   setLoaderActive(gate, on) { this.gates[gate].loaderActive = !!on; }
+
+  // Momentary push button (start | stop | reset). The press length is simulated time, so the
+  // PLC sees it for at least two scans at any simulation speed.
+  pressButton(name, seconds = 0.3) {
+    this.operator[name] = true;
+    this._releaseAt[name] = this.time + seconds;
+  }
+  // Mushroom emergency stop button: stays pressed until it is released (twisted) again.
+  setEmergencyStop(pressed) { this.operator.estopOk = !pressed; }
 
   *allBags() {
     for (const b of Object.values(this.belts)) yield* b.bags;
@@ -81,6 +94,12 @@ export class Plant {
 
   _tick(h) {
     this.time += h;
+    for (const [name, t] of Object.entries(this._releaseAt)) {
+      if (this.time >= t) {
+        this.operator[name] = false;
+        delete this._releaseAt[name];
+      }
+    }
     this._autoGenerate(h);
     this._spawn();
     for (const [id, a] of Object.entries(this.diverters)) {
@@ -107,7 +126,7 @@ export class Plant {
       if (!c.pending) c.pending = generateBagSpec(this.rng);
       const belt = this.belts[id];
       const last = belt.bags[belt.bags.length - 1];
-      const needed = c.pending.len + 4 + GAP;
+      const needed = c.pending.len + 2 + SPAWN_GAP;
       if (last && last.pos - last.len / 2 < needed) continue; // entry occupied
       const bag = createBag(++this.seq, c.pending, id, this.time);
       belt.bags.push(bag);
@@ -118,7 +137,8 @@ export class Plant {
   }
 
   _moveBelt(belt, h) {
-    if (!belt.motorOn) return;
+    // The emergency stop circuit is hard-wired: it cuts motor power directly, independent of the PLC.
+    if (!belt.motorOn || !this.operator.estopOk) return;
     const d = belt.def;
     let ahead = null; // nearest bag in front that is still on this belt
     for (const bag of belt.bags.slice()) { // front first
@@ -169,9 +189,10 @@ export class Plant {
       if (this.diverters[dv.id].pos < ARM_ENGAGED) continue;
       const gate = this.belts['G' + dv.id];
       const f = gate.bags[gate.bags.length - 1];
-      if (f && f.pos - f.len / 2 - GAP < bag.len / 2) return false; // gate belt entry occupied
+      const entry = np - dv.pos; // how far past the diverter the bag has already moved this tick
+      if (f && f.pos - f.len / 2 - GAP < entry + bag.len / 2) return false; // gate belt entry occupied
       this._remove(belt, bag);
-      bag.pos = np - dv.pos;
+      bag.pos = entry;
       bag.belt = 'G' + dv.id;
       bag.history.push('DIV' + dv.id, bag.belt);
       gate.bags.push(bag);

@@ -1,9 +1,11 @@
-// Event wiring for the HMI: clicks on the plant drawing, the control bar and the info panel buttons.
-// Operator actions change the field (the plant), never the I/O image or the PLC directly.
+// Event wiring for the HMI: clicks on the plant drawing, the operator panel and the info panel buttons.
+// Operator actions change the field (push buttons, emergency stop, bags, loaders), never the I/O image
+// or the PLC directly: the PLC only sees them as inputs in its next scan.
 
-export function setupControls({ svg, plant, panel, onReset, root = document }) {
+export function setupControls({ svg, plant, panel, onReset, sim, root = document }) {
   const $ = (id) => root.getElementById(id);
 
+  // ---- clicks in the drawing ----
   function selectFromEvent(target) {
     const bagNode = target.closest('[data-bag]');
     if (bagNode) {
@@ -12,7 +14,7 @@ export function setupControls({ svg, plant, panel, onReset, root = document }) {
     }
     const compNode = target.closest('[data-comp]');
     if (compNode) return panel.select({ type: 'comp', id: compNode.dataset.comp });
-    panel.select(null);
+    return panel.select(null);
   }
 
   svg.addEventListener('click', (e) => {
@@ -32,6 +34,7 @@ export function setupControls({ svg, plant, panel, onReset, root = document }) {
     }
   });
 
+  // ---- info panel buttons ----
   $('info-actions').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
@@ -44,6 +47,23 @@ export function setupControls({ svg, plant, panel, onReset, root = document }) {
     }
   });
 
+  // ---- operator panel: push buttons and the emergency stop mushroom ----
+  $('op-start').addEventListener('click', () => plant.pressButton('start'));
+  $('op-stop').addEventListener('click', () => plant.pressButton('stop'));
+  $('op-reset').addEventListener('click', () => plant.pressButton('reset'));
+  const estop = $('op-estop');
+  const paintEstop = () => {
+    const pressed = !plant.operator.estopOk;
+    estop.setAttribute('aria-pressed', String(pressed));
+    estop.classList.toggle('pressed', pressed);
+    estop.textContent = pressed ? 'Frigiv nødstop' : 'NØDSTOP';
+  };
+  estop.addEventListener('click', () => {
+    plant.setEmergencyStop(plant.operator.estopOk);
+    paintEstop();
+  });
+
+  // ---- simulation controls ----
   const auto = $('auto-on');
   const rate = $('auto-rate');
   const rateOut = $('auto-rate-out');
@@ -55,9 +75,21 @@ export function setupControls({ svg, plant, panel, onReset, root = document }) {
   rate.addEventListener('input', applyAuto);
   applyAuto();
 
+  const pause = $('sim-pause');
+  const step = $('sim-step');
+  const paintPause = () => {
+    pause.textContent = sim.paused ? 'Fortsæt' : 'Pause';
+    pause.setAttribute('aria-pressed', String(sim.paused));
+    step.disabled = !sim.paused;
+  };
+  pause.addEventListener('click', () => { sim.paused = !sim.paused; paintPause(); });
+  step.addEventListener('click', () => sim.stepOnce());
+  paintPause();
+
   $('btn-reset').addEventListener('click', () => {
-    onReset(); // clears the line and restarts the PLC program (its tracking memory would otherwise be stale)
+    onReset(); // clears the line and cold-starts the PLC program (its tracking queues would otherwise be stale)
     panel.select(null);
     applyAuto();
+    paintEstop();
   });
 }

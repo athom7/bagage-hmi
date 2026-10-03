@@ -64,3 +64,13 @@ COMPONENTS.REJ = {
   kind: 'reject', name: PLACE_NAMES.REJ, belt: 'MAIN',
   desc: 'Her ender kufferter uden gyldig destination, så de kan håndteres manuelt. Sådan gøres det også i rigtige anlæg.',
 };
+
+// Tags whose controlling lines in program.st should be shown for a component.
+export function logicTagsOf(id) {
+  const c = COMPONENTS[id];
+  if (!c) return [];
+  if (c.kind === 'belt' || c.kind === 'gate') return [c.motor];
+  if (c.kind === 'diverter') return [c.out];
+  if (c.kind === 'sensor' || c.kind === 'atr') return c.sensors;
+  return [];
+}

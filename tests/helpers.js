@@ -1,16 +1,28 @@
-// Shared test setup: plant + I/O image + scan cycle, stepped in simulated time.
+// Shared test setup: plant + I/O image + scan cycle running plc/program.st, stepped in simulated time.
+import { readFileSync } from 'node:fs';
 import { Plant } from '../js/plant/plant.js';
-import { createImage } from '../js/io/tags.js';
+import { createImage, TAG_BY_NAME } from '../js/io/tags.js';
 import { readInputs, writeOutputs } from '../js/io/io.js';
 import { Scan } from '../js/plc/scan.js';
-import { createStubProgram } from '../js/plc/stub-logic.js';
+import { compile } from '../js/plc/st/interpreter.js';
 import { GAP } from '../js/plant/layout.js';
 
-export function createSystem({ seed = 7, program = createStubProgram() } = {}) {
+export const PROGRAM_SOURCE = readFileSync(new URL('../plc/program.st', import.meta.url), 'utf8');
+
+export const compileSource = (source = PROGRAM_SOURCE) => compile(source, { tags: TAG_BY_NAME });
+
+// `started: true` presses Start once, like an operator would.
+export function createSystem({ seed = 7, source = PROGRAM_SOURCE, started = true } = {}) {
   const plant = new Plant({ seed });
   const image = createImage();
+  const program = compileSource(source);
   const scan = new Scan({ plant, image, program, readInputs, writeOutputs, periodMs: 100 });
-  return { plant, image, scan };
+  const sys = { plant, image, scan, program };
+  if (started) {
+    plant.pressButton('start');
+    simulate(sys, 0.6);
+  }
+  return sys;
 }
 
 // Advance simulated time: the plant steps in 20 ms increments, the PLC scans every 100 ms.

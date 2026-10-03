@@ -22,8 +22,7 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
 - `js/plc/` = CPU'en. ST-programmet arbejder KUN på I/O-billedet, aldrig direkte på plant eller DOM.
 - `js/hmi/` = visning. Læser tags og plant-tilstand. Operatørknapper (start, stop, nødstop, reset)
   er feltudstyr: de ændrer plant-tilstand, som bliver input ved næste scan.
-- AL styringslogik ligger i `plc/program.st`. Der må aldrig være styringslogik i JavaScript
-  (undtagen den midlertidige stub i fase 1, som slettes i fase 2).
+- AL styringslogik ligger i `plc/program.st`. Der må aldrig være styringslogik i JavaScript.
 
 ## Scancyklus
 - Fast cyklus på 100 ms: `readInputs()` → `execute()` → `writeOutputs()`. Rækkefølgen ændres aldrig.
@@ -41,8 +40,20 @@ PROGRAM/END_PROGRAM, VAR/END_VAR, BOOL/INT/TIME (T#500ms, T#5s), :=, IF/ELSIF/EL
 CASE/OF/END_CASE, AND/OR/XOR/NOT, = <> < <= > >=, + - * / MOD, (* *) og // kommentarer.
 Funktionsblokke: TON, TOF, R_TRIG, F_TRIG, CTU, FIFO (FIFO er en forenkling, ikke IEC-standard).
 
+## Designregler fra fejlsøgning (dækket af tests, bryd dem ikke)
+- En fotocelle scannes hvert 100 ms. To kufferter med under ca. 10 enheders mellemrum bliver til én for PLC'en
+  og ødelægger sporingskøerne. Skranken afleverer derfor med minimum 80 enheders afstand (`SPAWN_GAP`),
+  og sammenfletningen frigiver først en ny kuffert efter 700 ms *kørende* hovedbånd.
+- Tidtagning i logikken (mellemrum, tilbagetrækning af klap) må kun tælle, mens hovedbåndet kører (`M_MainOk`).
+  Ellers trækkes en klap tilbage, før kufferten er nået frem, når båndet holder eller står stille.
+- Hver kuffert får sin egen klap-beslutning ved fotocellen (`M_WantN := FIFO_N.OUT = N`), så en klap aldrig
+  står ude for næste kuffert. Timeren trækker kun klappen tilbage efter den *sidste* kuffert.
+- Fuld-føleren på gate-båndene har bredt detektionsfelt (`reach`), ellers kan en punktstråle ende i et mellemrum.
+- Nødstop afbryder motorerne hårdt i `plant.js` (sikkerhedskreds), og PLC'en læser samme signal for tilstand og alarm.
+
 ## Arbejdsgang
 - Projektet bygges i tre faser (se `PLAN.md`). Byg kun den aktuelle fase – spring ikke frem.
+- Status: fase 1 og 2 er færdige. Fase 3 (alarmer, finpudsning, README, deploy) er næste.
 - Hver ny ST-sprogfeature og funktionsblok skal have en test i `tests/`.
 - Kør `node --test tests/` og åbn siden lokalt uden konsolfejl før commit.
 - Små, beskrivende commits på engelsk.

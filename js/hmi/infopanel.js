@@ -4,6 +4,7 @@ import { TAG_BY_NAME, tagValue } from '../io/tags.js';
 import { COMPONENTS, PLACE_NAMES } from './components.js';
 import { plannedRoute } from '../plant/bag.js';
 import { defectText } from '../plant/flights.js';
+import { logicHtml } from './stview.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const pill = (text, cls) => `<span class="pill ${cls}">${esc(text)}</span>`;
@@ -19,8 +20,9 @@ function tagTable(image, names) {
   return `<h3>Signaler</h3><table class="tags"><thead><tr><th>Tag</th><th>Adresse</th><th>Værdi</th><th>Beskrivelse</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
-const LOGIC_PLACEHOLDER = `<h3>Styrende logik</h3><p class="logic-placeholder">Her vises den linje i <code>program.st</code>, der styrer komponenten. Det kommer i fase 2. Indtil da styres anlægget af en midlertidig JavaScript-stub (<code>js/plc/stub-logic.js</code>), som arbejder på de samme tags.</p>`;
-const LOGIC_INPUT = `<h3>Styrende logik</h3><p class="logic-placeholder">Dette er et input fra marken. PLC'en styrer det ikke, men læser det i starten af hver scancyklus. I fase 2 vises her, hvilke linjer i <code>program.st</code> der bruger signalet.</p>`;
+const logicSection = (program, tags, intro) => `<h3>Styrende logik</h3><p class="logic-intro">${intro}</p>${logicHtml(program, tags)}`;
+const LOGIC_OUT = 'Disse linjer i <code>plc/program.st</code> styrer udgangen (og de variable, de bruger). Værdierne er live.';
+const LOGIC_IN = "Dette er et input fra marken. PLC'en styrer det ikke, men læser det i starten af hver scancyklus. Disse linjer bruger signalet:";
 const LOGIC_NONE = `<h3>Styrende logik</h3><p class="logic-placeholder">Ingen PLC-styring. Det er en del af processen uden for anlæggets styring.</p>`;
 
 function bagHtml(bag, plant) {
@@ -62,7 +64,7 @@ function bagHtml(bag, plant) {
     <ol class="route">${steps.join('')}</ol>`;
 }
 
-function compHtml(id, plant, image) {
+function compHtml(id, plant, image, program) {
   const c = COMPONENTS[id];
   const head = (state, cls) => `<h2>${esc(c.name)} ${pill(state, cls)}</h2><p class="desc">${esc(c.desc)}</p>`;
   const sensors = (c.sensors && c.sensors.length) ? c.sensors : [];
@@ -80,7 +82,7 @@ function compHtml(id, plant, image) {
         ${c.kind === 'gate' ? row('Leveret hertil', plant.stats.delivered[c.gate]) : ''}
         ${c.kind === 'gate' ? row('Læsser', plant.gates[c.gate].loaderActive ? 'Aktiv' : 'Pauset') : ''}
       </dl>`;
-      return html + tagTable(image, [c.motor, ...sensors]) + LOGIC_PLACEHOLDER;
+      return html + tagTable(image, [c.motor, ...sensors]) + logicSection(program, [c.motor], LOGIC_OUT);
     }
     case 'diverter': {
       const a = plant.diverters[c.div];
@@ -88,19 +90,19 @@ function compHtml(id, plant, image) {
       const state = ext ? 'Udslået' : a.pos < 0.01 ? 'Indtrukket' : 'Skifter';
       return head(state, ext ? 'blue' : a.pos < 0.01 ? 'off' : 'warn')
         + `<dl>${row('Kommando', `<code>${c.out}</code> = ${tagValue(image, c.out) ? 'TRUE' : 'FALSE'}`)}${row('Armens stilling', `${Math.round(a.pos * 100)} %`)}${row('Gangtid', '0,3 s')}</dl>`
-        + tagTable(image, [c.out, ...sensors, `I_PE_D${c.div}`]) + LOGIC_PLACEHOLDER;
+        + tagTable(image, [c.out, ...sensors, `I_PE_D${c.div}`]) + logicSection(program, [c.out], LOGIC_OUT);
     }
     case 'sensor': {
       const blocked = plant.isBlocked(id);
       return head(blocked ? 'Afbrudt' : 'Fri', blocked ? 'warn' : 'off')
         + `<dl>${row('Sidder på', esc(PLACE_NAMES[c.sensor.belt]))}${row('Placering', `${Math.round(c.sensor.pos)} enheder fra båndets start`)}</dl>`
-        + tagTable(image, sensors) + LOGIC_INPUT;
+        + tagTable(image, sensors) + logicSection(program, sensors, LOGIC_IN);
     }
     case 'atr': {
       const active = plant.atrActive();
       return head(active ? 'Læser' : 'Klar', active ? 'blue' : 'off')
         + `<dl>${row('Seneste destination', plant.atr.dest > 0 ? `Gate ${plant.atr.dest}` : '0 (ingen gyldig)')}${row('Seneste aflæsning', plant.atr.lastReadAt > 0 ? `${(plant.time - plant.atr.lastReadAt).toFixed(1)} s siden` : '–')}</dl>`
-        + tagTable(image, sensors) + LOGIC_INPUT;
+        + tagTable(image, sensors) + logicSection(program, sensors, LOGIC_IN);
     }
     case 'counter': {
       const q = plant.counters[c.belt].queued;
@@ -131,7 +133,7 @@ function overviewHtml(plant) {
     </dl>`;
 }
 
-export function createInfoPanel({ body, actions, plant, image }) {
+export function createInfoPanel({ body, actions, plant, image, getProgram = () => null, onSelect = () => {} }) {
   let selection = null;
   let last = '';
 
@@ -152,7 +154,7 @@ export function createInfoPanel({ body, actions, plant, image }) {
     let html;
     if (!selection) html = overviewHtml(plant);
     else if (selection.type === 'bag') html = bagHtml(selection.bag, plant);
-    else html = compHtml(selection.id, plant, image);
+    else html = compHtml(selection.id, plant, image, getProgram());
     if (html !== last) {
       body.innerHTML = html;
       last = html;
@@ -166,6 +168,7 @@ export function createInfoPanel({ body, actions, plant, image }) {
       last = '';
       renderActions();
       refresh();
+      onSelect(sel);
     },
     refresh,
     refreshActions: renderActions,
