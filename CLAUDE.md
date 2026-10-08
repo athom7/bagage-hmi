@@ -30,7 +30,8 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
     (rød = nødstop/STOP/fejl, gul = advarsel, fx ugyldig destination).
   - **Showcase**: farverig og levende, til at vise frem (gate-farver, animation).
 - JavaScript sætter kun tilstandsklasser: `running`, `stopped`, `fault`, `blocked`, `extended`, `reading`,
-  `bag-dest-0` … `bag-dest-3`, `bag-defect`, `selected`. Temaet vælges med `data-theme` på `<html>`.
+  `bag-dest-0` … `bag-dest-3`, `bag-defect`, `selected` (og `on`/`off` for live-værdier i programvisningen).
+  Temaet vælges med `data-theme` på `<html>` (`js/hmi/theme.js`).
 - Alle farver ligger som tokens i `css/hmi.css` under `:root[data-theme="operator"]` og
   `:root[data-theme="showcase"]`. **Ingen farveværdier i `js/`** – en test håndhæver det.
 

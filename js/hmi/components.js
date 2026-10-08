@@ -1,7 +1,7 @@
 // HMI knowledge about the plant's components: names, descriptions and which tags belong to each.
 // Used by the render layer (click targets) and the info panel.
 
-import { SENSORS, DIVERTERS, COUNTERS } from '../plant/layout.js';
+import { BELTS, SENSORS, DIVERTERS, COUNTERS, ATR, REJECT } from '../plant/layout.js';
 import { FLIGHTS } from '../plant/flights.js';
 
 export const PLACE_NAMES = {
@@ -64,6 +64,17 @@ COMPONENTS.REJ = {
   kind: 'reject', name: PLACE_NAMES.REJ, belt: 'MAIN',
   desc: 'Her ender kufferter uden gyldig destination, så de kan håndteres manuelt. Sådan gøres det også i rigtige anlæg.',
 };
+
+// Learning layer: the real-world explanation for each component comes from the plant layout data.
+for (const [id, c] of Object.entries(COMPONENTS)) {
+  if (c.kind === 'counter') c.explainDa = COUNTERS[c.belt].explainDa;
+  else if (c.kind === 'belt' || c.kind === 'gate') c.explainDa = BELTS[c.belt].explainDa;
+  else if (c.kind === 'diverter') c.explainDa = DIVERTERS.find((d) => d.id === c.div).explainDa;
+  else if (c.kind === 'sensor') c.explainDa = c.sensor.explainDa;
+  else if (c.kind === 'atr') c.explainDa = ATR.explainDa;
+  else if (c.kind === 'reject') c.explainDa = REJECT.explainDa;
+  if (!c.explainDa) throw new Error(`component ${id} has no explainDa`);
+}
 
 // Tags whose controlling lines in program.st should be shown for a component.
 export function logicTagsOf(id) {

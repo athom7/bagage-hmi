@@ -1,4 +1,6 @@
 // SVG rendering of the plant. Reads plant state, never writes to it.
+// Only state classes are set here (running, stopped, blocked, extended, reading, bag-dest-N, bag-defect,
+// selected, fault). All colours come from the active theme in css/hmi.css.
 
 import { BELTS, SENSORS, ATR, DIVERTERS, COUNTERS, pointAt } from '../plant/layout.js';
 import { PLACE_NAMES, gateFlights } from './components.js';
@@ -106,24 +108,27 @@ export function createRenderer(svg, plant) {
 
   // --- bags ---
   const bagEl = (bag) => {
-    const g = el('g', { 'data-bag': bag.id, class: `bag g${bag.gate}${bag.defect ? ' defect' : ''}` }, layerBags);
+    const g = el('g', { 'data-bag': bag.id, class: `bag bag-dest-${bag.gate}${bag.defect ? ' bag-defect' : ''}` }, layerBags);
     el('title', {}, g, `Kuffert ${bag.id} · ${bag.flight}: klik for detaljer`);
     const body = el('rect', { x: -bag.len / 2, y: -11, width: bag.len, height: 22, rx: 4, class: 'bag-body' }, g);
     const text = el('text', { x: 0, y: 4, class: 'bag-text center' }, g, bag.gate > 0 ? String(bag.gate) : '?');
     return { g, body, text };
   };
 
-  function update(selection) {
+  // `fault`: emergency stop pressed or PLC in STOP (frames the whole drawing).
+  function update(selection, { fault = false } = {}) {
+    svg.classList.toggle('fault', fault);
     for (const [id, b] of Object.entries(plant.belts)) {
-      refs.belts[id].classList.toggle('run', b.motorOn);
+      refs.belts[id].classList.toggle('running', b.motorOn);
+      refs.belts[id].classList.toggle('stopped', !b.motorOn);
     }
     for (const s of SENSORS) refs.sensors[s.id].classList.toggle('blocked', plant.isBlocked(s.id));
     for (const dv of DIVERTERS) {
       const a = plant.diverters[dv.id];
       refs.arms[dv.id].setAttribute('transform', `rotate(${(a.pos * 52).toFixed(1)})`);
-      refs.arms[dv.id].parentNode.classList.toggle('ext', plant.armExtended(dv.id));
+      refs.arms[dv.id].parentNode.classList.toggle('extended', plant.armExtended(dv.id));
     }
-    refs.atr.classList.toggle('active', plant.time - plant.atr.lastReadAt < 0.35);
+    refs.atr.classList.toggle('reading', plant.time - plant.atr.lastReadAt < 0.35);
     for (const [id, t] of Object.entries(refs.counterText)) {
       const q = plant.counters[id].queued;
       t.textContent = `Kø: ${q}`;
@@ -147,8 +152,8 @@ export function createRenderer(svg, plant) {
         refs.bags.delete(id);
       }
     }
-    svg.querySelectorAll('.comp.sel').forEach((n) => n.classList.remove('sel'));
-    if (selection && selection.type === 'comp') svg.querySelectorAll(`[data-comp="${selection.id}"]`).forEach((n) => n.classList.add('sel'));
+    svg.querySelectorAll('.comp.selected').forEach((n) => n.classList.remove('selected'));
+    if (selection && selection.type === 'comp') svg.querySelectorAll(`[data-comp="${selection.id}"]`).forEach((n) => n.classList.add('selected'));
   }
 
   return { update, placeName: (id) => PLACE_NAMES[id] || id };

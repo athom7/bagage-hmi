@@ -13,6 +13,7 @@ import { createInfoPanel } from './hmi/infopanel.js';
 import { createStView, explainLines } from './hmi/stview.js';
 import { logicTagsOf } from './hmi/components.js';
 import { setupControls } from './hmi/controls.js';
+import { setupTheme } from './hmi/theme.js';
 
 const PROGRAM_URL = 'plc/program.st';
 const params = new URLSearchParams(location.search);
@@ -59,7 +60,7 @@ const sim = {
   stepOnce() { // one PLC scan = 100 ms of plant time
     plant.step(0.1);
     scan.runOnce();
-    refreshUi(true);
+    refreshUi();
   },
 };
 
@@ -114,6 +115,7 @@ function resetPlant() {
 }
 
 setupControls({ svg, plant, panel, sim, onReset: resetPlant });
+setupTheme(document.getElementById('theme-toggle'));
 document.getElementById('plc-restart').addEventListener('click', () => {
   currentSource = originalSource;
   resetPlant();
@@ -121,6 +123,11 @@ document.getElementById('plc-restart').addEventListener('click', () => {
 });
 
 stview.setProgram(program);
+// Danish explanations per network. Optional: without them the program view just has no "Forklar" buttons.
+fetch('plc/networks.da.json')
+  .then((r) => (r.ok ? r.json() : []))
+  .then((list) => stview.setNetworks(list))
+  .catch(() => {});
 if (startupError) stview.showError(startupError.message, startupError.line || 0);
 else plant.pressButton('start'); // as if the operator pressed Start when the page opened
 
@@ -136,13 +143,13 @@ let shownError = null;
 
 function updateStatus() {
   statusEl.plc.textContent = scan.state;
-  statusEl.plc.className = scan.state === 'RUN' ? 'run' : 'stop';
+  statusEl.plc.className = scan.state === 'RUN' ? 'running' : 'fault';
   statusEl.count.textContent = scan.count;
   statusEl.exec.textContent = scan.execMs.toFixed(2);
   const st = scan.program.getValue('M_State');
   statusEl.state.textContent = scan.state === 'STOP' ? 'PLC i STOP' : STATE_TEXT[st] || '–';
-  statusEl.lampRun.classList.toggle('on', plant.lamps.run);
-  statusEl.lampFault.classList.toggle('on', plant.lamps.fault || scan.state === 'STOP');
+  statusEl.lampRun.classList.toggle('running', plant.lamps.run);
+  statusEl.lampFault.classList.toggle('fault', plant.lamps.fault || scan.state === 'STOP');
   const s = plant.stats;
   statusEl.checkedIn.textContent = s.checkedIn;
   statusEl.onPlant.textContent = [...plant.allBags()].length;
@@ -159,8 +166,10 @@ function updateStatus() {
   }
 }
 
-function refreshUi(force = false) {
-  renderer.update(panel.selection);
+const drawPlant = () => renderer.update(panel.selection, { fault: !plant.operator.estopOk || scan.state === 'STOP' });
+
+function refreshUi() {
+  drawPlant();
   updateStatus();
   panel.refresh();
   stview.update();
@@ -173,7 +182,7 @@ function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
   if (!sim.paused) plant.step(dt * speed);
-  renderer.update(panel.selection);
+  drawPlant();
   sinceUi += dt;
   if (sinceUi > 0.2) {
     sinceUi = 0;

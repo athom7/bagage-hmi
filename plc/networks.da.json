@@ -1,0 +1,27 @@
+[
+  {
+    "anchor": "1. OPERATING MODE",
+    "title": "Driftstilstand",
+    "explain": "Netværket er anlæggets tilstandsmaskine med tre tilstande: stoppet, i drift og nødstop. Start og Stop er trykknapper, som PLC'en kun reagerer på i det øjeblik, de trykkes ned (flankedetektering med R_TRIG). Nødstop har altid forrang, og kontakten er normalt lukket, så også et knækket kabel stopper anlægget. Efter et nødstop kan anlægget ikke bare startes igen: først skal knappen frigives og Reset trykkes, ligesom på en rigtig maskine."
+  },
+  {
+    "anchor": "2. BAG TRACKING",
+    "title": "Sporing af kufferter",
+    "explain": "PLC'en ser ikke kufferterne, den tæller sig frem. ATR-scanneren læser mærket og lægger gate-nummeret i en kø (FIFO). Kufferter kan ikke overhale hinanden på et bånd, så det ældste nummer i køen hører altid til den næste kuffert, der når en klap. Klappen tager nummeret ud, og skal kufferten ikke af her, sendes nummeret videre til næste klaps kø. Det kaldes sporing (tracking) og bruges i alle sorteringsanlæg."
+  },
+  {
+    "anchor": "3. DIVERTERS AND INTERLOCKS",
+    "title": "Klapper og interlock",
+    "explain": "Når en kuffert bryder fotocellen før en klap, afgøres det med det samme, om klappen skal slå ud. Beslutningen tages for hver kuffert, så en klap aldrig står ude for den næste. En timer trækker klappen tilbage efter den sidste kuffert, men den tæller kun, mens båndet kører. Desuden er der en interlock: skal kufferten til en gate, hvor båndet er fuldt, holder hovedbåndet stille, indtil der er plads."
+  },
+  {
+    "anchor": "4. MERGE OF THE TWO CHECK-IN BELTS",
+    "title": "Sammenfletning",
+    "explain": "To skranker leverer til ét hovedbånd. PLC'en slipper kun én kuffert ind ad gangen, lader skrankerne skiftes, så ingen af dem venter for evigt, og kræver 700 ms frit flettepunkt med kørende bånd, før den næste må komme. Luften er nødvendig, fordi fotocellerne længere fremme skal kunne se mellemrummet mellem to kufferter inden for én scancyklus på 100 ms."
+  },
+  {
+    "anchor": "5. OUTPUTS",
+    "title": "Udgange",
+    "explain": "Til sidst skrives alle udgange samlet. Hver motor og klap har præcis én linje, der bestemmer den, og det gør programmet let at fejlfinde: vil man vide, hvorfor et bånd står stille, kigger man på én linje. Lamperne viser drift og fejl for operatøren."
+  }
+]

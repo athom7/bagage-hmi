@@ -109,6 +109,13 @@ export function logicHtml(program, tagNames) {
   return `<div class="logic">${rows.join('')}</div>`;
 }
 
+// ---- Danish network explanations (plc/networks.da.json) ----
+
+// Index of the line holding each network's section header ("// 1. OPERATING MODE"), or -1 if missing.
+export function findNetworkLines(lines, networks) {
+  return networks.map((n) => lines.findIndex((l) => l.trim() === `// ${n.anchor}`));
+}
+
 // ---- the program panel ----
 
 export function createStView({ root, onApply, onRevert }) {
@@ -130,6 +137,7 @@ export function createStView({ root, onApply, onRevert }) {
   let lastFifo = '';
   let editing = false;
   let errorLine = 0;
+  let networks = [];
 
   function render() {
     body.textContent = '';
@@ -138,12 +146,29 @@ export function createStView({ root, onApply, onRevert }) {
     if (!program) return;
     const state = { inBlock: false };
     const frag = document.createDocumentFragment();
+    const netAt = new Map();
+    findNetworkLines(program.lines, networks).forEach((idx, k) => { if (idx >= 0) netAt.set(idx, networks[k]); });
     program.lines.forEach((text, i) => {
       const row = document.createElement('div');
       row.className = 'ln';
       row.innerHTML = `<span class="no">${i + 1}</span><code>${highlightLine(text, state, program.symbols) || ' '}</code>`;
       frag.appendChild(row);
       lineEls.push(row);
+      const net = netAt.get(i);
+      if (net) {
+        // "Forklar" button on the network header; the Danish text is data, not part of the ST code.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'secondary explain-btn';
+        btn.textContent = 'Forklar';
+        btn.setAttribute('aria-expanded', 'false');
+        row.appendChild(btn);
+        const box = document.createElement('div');
+        box.className = 'net-explain';
+        box.hidden = true;
+        box.innerHTML = `<strong>${esc(net.title)}</strong><p>${esc(net.explain)}</p>`;
+        frag.appendChild(box);
+      }
     });
     body.appendChild(frag);
     spans = [...body.querySelectorAll('[data-var]')];
@@ -177,6 +202,16 @@ export function createStView({ root, onApply, onRevert }) {
     }
   }
 
+  body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.explain-btn');
+    if (!btn) return;
+    const box = btn.parentElement.nextElementSibling;
+    const open = box.hidden;
+    box.hidden = !open;
+    btn.textContent = open ? 'Skjul' : 'Forklar';
+    btn.setAttribute('aria-expanded', String(open));
+  });
+
   btnEdit.addEventListener('click', () => { setError(''); setEditing(true); });
   btnCancel.addEventListener('click', () => { setError(''); setEditing(false); });
   btnRevert.addEventListener('click', () => { setError(''); setEditing(false); onRevert(); });
@@ -205,6 +240,11 @@ export function createStView({ root, onApply, onRevert }) {
       setError('');
     },
     showError: setError,
+    setNetworks(list) {
+      networks = Array.isArray(list) ? list : [];
+      render();
+      if (errorLine) setError(errorBox.textContent, errorLine);
+    },
     get editing() { return editing; },
 
     // Mark lines [{ line, primary }] and scroll to the first one.

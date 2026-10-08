@@ -1,29 +1,34 @@
 <!doctype html>
-<html lang="da">
+<html lang="da" data-theme="operator">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bagage-HMI – bagagesorteringsanlæg</title>
   <meta name="description" content="Browserbaseret HMI-simulator af et bagagesorteringsanlæg i en lufthavn, styret af en PLC-scancyklus.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2322303c'/%3E%3Crect x='6' y='13' width='20' height='13' rx='3' fill='%2358a6ff'/%3E%3Cpath d='M12 13v-3h8v3' stroke='%2358a6ff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+  <script>
+    // Apply the saved display theme before the first paint (no flash). Works without storage too.
+    try { var t = localStorage.getItem('bagage-hmi-theme'); if (t === 'showcase' || t === 'operator') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="stylesheet" href="css/hmi.css">
 </head>
 <body>
   <header class="statusbar">
     <h1>Bagagesortering <span class="sub">Terminal 2 · simulator</span></h1>
     <dl class="status-items" aria-label="Status">
-      <div><dt>PLC</dt><dd><span id="plc-state" class="run">RUN</span></dd></div>
+      <div><dt>PLC</dt><dd><span id="plc-state" class="running">RUN</span></dd></div>
       <div><dt>Scan #</dt><dd id="scan-count">0</dd></div>
       <div><dt>Scanperiode</dt><dd>100 ms</dd></div>
       <div><dt>Programtid</dt><dd><span id="scan-exec">0.00</span> ms</dd></div>
       <div><dt>Tilstand</dt><dd id="plant-state">–</dd></div>
-      <div><dt>Drift</dt><dd><span id="lamp-run" class="lamp run" title="Q_Lamp_Run"></span></dd></div>
-      <div><dt>Fejl</dt><dd><span id="lamp-fault" class="lamp fault" title="Q_Lamp_Fault"></span></dd></div>
+      <div><dt>Drift</dt><dd><span id="lamp-run" class="lamp" title="Q_Lamp_Run"></span></dd></div>
+      <div><dt>Fejl</dt><dd><span id="lamp-fault" class="lamp" title="Q_Lamp_Fault"></span></dd></div>
       <div><dt>Tjekket ind</dt><dd id="st-checkedin">0</dd></div>
       <div><dt>På anlægget</dt><dd id="st-onplant">0</dd></div>
       <div><dt>Leveret</dt><dd id="st-delivered">0</dd></div>
       <div><dt>Afvist</dt><dd id="st-rejected">0</dd></div>
     </dl>
+    <button type="button" id="theme-toggle" class="secondary theme-toggle" aria-pressed="false" title="Skift mellem operatørvisning (ISA-101) og showcase">Visning: Operatør</button>
     <div id="plc-error" class="plc-error" role="alert" hidden></div>
   </header>
 
@@ -50,10 +55,12 @@
         <li><span class="sw sw-run"></span>Bånd kører</li>
         <li><span class="sw sw-pe"></span>Fotocelle afbrudt</li>
         <li><span class="sw sw-ext"></span>Klap udslået</li>
-        <li><span class="sw sw-g1"></span>Gate 1</li>
-        <li><span class="sw sw-g2"></span>Gate 2</li>
-        <li><span class="sw sw-g3"></span>Gate 3</li>
+        <li class="only-showcase"><span class="sw sw-g1"></span>Gate 1</li>
+        <li class="only-showcase"><span class="sw sw-g2"></span>Gate 2</li>
+        <li class="only-showcase"><span class="sw sw-g3"></span>Gate 3</li>
+        <li class="only-operator"><span class="sw sw-g1"></span>Kuffert (tallet er gaten)</li>
         <li><span class="sw sw-g0"></span>Ugyldig destination</li>
+        <li class="only-operator"><span class="sw sw-fault"></span>Fejl / nødstop</li>
       </ul>
     </section>
 
@@ -74,7 +81,7 @@
         <button type="button" id="st-revert" class="secondary">Gendan original</button>
       </div>
     </div>
-    <p class="st-hint">Grøn = TRUE, grå = FALSE, tal og tider vises ved siden af navnet. Klik på en komponent i anlægget for at se de linjer, der styrer den. Programmet kan redigeres her: <em>Indlæs</em> kold-starter PLC'en og nulstiller anlægget.</p>
+    <p class="st-hint">Fremhævet navn = TRUE, nedtonet = FALSE, tal og tider vises ved siden af navnet. Klik på en komponent i anlægget for at se de linjer, der styrer den. <em>Forklar</em> ved hvert netværk giver en forklaring på dansk. Programmet kan redigeres her: <em>Indlæs</em> kold-starter PLC'en og nulstiller anlægget.</p>
     <div id="st-error" class="st-error" role="alert" hidden></div>
     <div id="st-body" class="st-body" tabindex="0"></div>
     <textarea id="st-editor" class="st-editor" spellcheck="false" aria-label="Rediger ST-program" hidden></textarea>

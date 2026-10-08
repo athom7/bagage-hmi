@@ -66,7 +66,8 @@ function bagHtml(bag, plant) {
 
 function compHtml(id, plant, image, program) {
   const c = COMPONENTS[id];
-  const head = (state, cls) => `<h2>${esc(c.name)} ${pill(state, cls)}</h2><p class="desc">${esc(c.desc)}</p>`;
+  const head = (state, cls) => `<h2>${esc(c.name)} ${pill(state, cls)}</h2><p class="desc">${esc(c.desc)}</p>`
+    + `<div class="explain"><h3>I en rigtig lufthavn</h3><p>${esc(c.explainDa)}</p></div>`;
   const sensors = (c.sensors && c.sensors.length) ? c.sensors : [];
 
   switch (c.kind) {
