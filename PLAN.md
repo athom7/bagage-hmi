@@ -100,8 +100,10 @@ bagage-hmi/
 2. `layout.js` + `plant.js`: bånd som segmenter (længde, hastighed), kufferter med position, akkumulering (ingen overlap), overførsel mellem bånd, klap med 300 ms gangtid og feedback.
 3. `tags.js` + `io.js`: hele I/O-billedet bygges allerede nu.
 4. **Midlertidig `js/plc/stub-logic.js`** skriver til *samme* output-billede (markeret `// TEMP phase 1 – replaced by program.st`). Når den byttes ud i fase 2, beviser det, at I/O-adskillelsen virker.
-5. `render.js`: SVG-anlæg og kufferter i bevægelse. Farver: motor kører/står, fotocelle brudt/fri, klap ude/inde.
+5. `render.js`: SVG-anlæg og kufferter i bevægelse. Sætter kun tilstandsklasser (motor kører/står, fotocelle brudt/fri, klap ude/inde, kuffertens destination).
+5b. **To visningstilstande** med knap i statuslinjen: *Operatør* (ISA-101, standard: gråtoner, farve kun ved unormale tilstande) og *Showcase* (farverig, til at vise frem). Alle farver ligger som to temaer i `hmi.css`, ingen farver i JavaScript.
 6. `infopanel.js`: Klik på en kuffert viser fly, destination, vægt og rute (planlagt + nuværende position). Klik på en komponent viser tilstand og I/O-adresse (logiklinjen får en pladsholder, indtil fase 2).
+6b. **Læringslag:** hver komponent i `layout.js` får `explainDa` (1–2 sætninger om den rigtige lufthavn, og hvorfor den betyder noget), som infopanelet viser.
 7. "Ny kuffert"-knap ved hver skranke + auto-generering med justerbar rate.
 
 **Færdig når:** Kufferter fra begge skranker kører synligt til den rigtige gate, ugyldige kufferter havner på problemstationen, og alle klik viser info.
@@ -112,6 +114,7 @@ bagage-hmi/
 3. `scan.js`: 100 ms-cyklus med tydeligt adskilte `readInputs()` → `execute()` → `writeOutputs()`. Statuslinjen viser RUN/STOP, antal scans og målt cyklustid. Pause og enkelt-scan-knap til fejlfinding.
 4. Slet `stub-logic.js`.
 5. `stview.js`: ST-panel med syntaksfarver og live-værdier. Komponent-klik viser og fremhæver den styrende logiklinje.
+5b. **Læringslag:** hvert netværk i `program.st` får en dansk forklaring i `plc/networks.da.json`, som vises med en "Forklar"-knap under netværkets overskrift. Kodekommentarerne forbliver engelske.
 6. Betjeningspanel: Start, Stop, Nødstop (slå ind/ud), Reset.
 
 **Færdig når:** Anlægget opfører sig som i fase 1, men nu styret af `program.st`. Testene er grønne, en ændring i `program.st` ændrer adfærden, og en syntaksfejl sender CPU'en i STOP.

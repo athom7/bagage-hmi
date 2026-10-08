@@ -24,6 +24,24 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
   er feltudstyr: de ændrer plant-tilstand, som bliver input ved næste scan.
 - AL styringslogik ligger i `plc/program.st`. Der må aldrig være styringslogik i JavaScript.
 
+## Visning: to temaer – ingen farver i JavaScript
+- To visningstilstande, skiftes med knappen i statuslinjen og gemt i `localStorage`:
+  - **Operatør** (standard, ISA-101): lys grå, gråtoner for normal drift. Farve kun ved unormale tilstande
+    (rød = nødstop/STOP/fejl, gul = advarsel, fx ugyldig destination).
+  - **Showcase**: farverig og levende, til at vise frem (gate-farver, animation).
+- JavaScript sætter kun tilstandsklasser: `running`, `stopped`, `fault`, `blocked`, `extended`, `reading`,
+  `bag-dest-0` … `bag-dest-3`, `bag-defect`, `selected`. Temaet vælges med `data-theme` på `<html>`.
+- Alle farver ligger som tokens i `css/hmi.css` under `:root[data-theme="operator"]` og
+  `:root[data-theme="showcase"]`. **Ingen farveværdier i `js/`** – en test håndhæver det.
+
+## Læringslag (danske forklaringer som data)
+- Hver fysisk komponent i `js/plant/layout.js` har `explainDa`: 1–2 sætninger om, hvad den er i en rigtig
+  lufthavn, og hvorfor den betyder noget. Infopanelet viser den under "I en rigtig lufthavn".
+- Hvert netværk i `program.st` (sektionsoverskrifterne `// N. TITLE`) har en dansk forklaring i
+  `plc/networks.da.json`, som vises med en "Forklar"-knap i programvisningen.
+- Forklaringerne er data, ikke ST-kode. Kommentarer i `program.st` forbliver engelske.
+- Nye komponenter og nye netværk skal have deres forklaring med det samme (testene fejler ellers).
+
 ## Scancyklus
 - Fast cyklus på 100 ms: `readInputs()` → `execute()` → `writeOutputs()`. Rækkefølgen ændres aldrig.
 - Inputs er frosset under execute. Outputs skrives først til plant efter hele programmet har kørt.
@@ -53,7 +71,7 @@ Funktionsblokke: TON, TOF, R_TRIG, F_TRIG, CTU, FIFO (FIFO er en forenkling, ikk
 
 ## Arbejdsgang
 - Projektet bygges i tre faser (se `PLAN.md`). Byg kun den aktuelle fase – spring ikke frem.
-- Status: fase 1 og 2 er færdige. Fase 3 (alarmer, finpudsning, README, deploy) er næste.
+- Status: fase 1 og 2 er færdige, inkl. visningstilstande og læringslag. Fase 3 (alarmer, finpudsning, README, deploy) er næste.
 - Hver ny ST-sprogfeature og funktionsblok skal have en test i `tests/`.
 - Kør `node --test tests/` og åbn siden lokalt uden konsolfejl før commit.
 - Små, beskrivende commits på engelsk.
