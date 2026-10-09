@@ -31,7 +31,7 @@ export class Plant {
     this.counters = {};
     for (const id of Object.keys(COUNTERS)) this.counters[id] = { queued: 0, pending: null };
     this.diverters = {};
-    for (const d of DIVERTERS) this.diverters[d.id] = { cmd: false, pos: 0 };
+    for (const d of DIVERTERS) this.diverters[d.id] = { cmd: false, pos: 0, jammed: false };
     this.gates = {};
     for (const d of DIVERTERS) this.gates[d.id] = { loaderActive: true, nextUnload: 6 + d.id };
     this.atr = { readUntil: -1, dest: 0, lastReadAt: -10 };
@@ -63,6 +63,8 @@ export class Plant {
     return true;
   }
   setLoaderActive(gate, on) { this.gates[gate].loaderActive = !!on; }
+  // Field fault: the arm is mechanically jammed and stays where it is, whatever the command.
+  setArmJammed(divId, jammed) { this.diverters[divId].jammed = !!jammed; }
 
   // Momentary push button (start | stop | reset). The press length is simulated time, so the
   // PLC sees it for at least two scans at any simulation speed.
@@ -102,7 +104,8 @@ export class Plant {
     }
     this._autoGenerate(h);
     this._spawn();
-    for (const [id, a] of Object.entries(this.diverters)) {
+    for (const a of Object.values(this.diverters)) {
+      if (a.jammed) continue;
       const target = a.cmd ? 1 : 0;
       const dpos = h / ARM_TRAVEL_S;
       a.pos = a.pos < target ? Math.min(target, a.pos + dpos) : Math.max(target, a.pos - dpos);

@@ -5,23 +5,33 @@
     "explain": "Netværket er anlæggets tilstandsmaskine med tre tilstande: stoppet, i drift og nødstop. Start og Stop er trykknapper, som PLC'en kun reagerer på i det øjeblik, de trykkes ned (flankedetektering med R_TRIG). Nødstop har altid forrang, og kontakten er normalt lukket, så også et knækket kabel stopper anlægget. Efter et nødstop kan anlægget ikke bare startes igen: først skal knappen frigives og Reset trykkes, ligesom på en rigtig maskine."
   },
   {
-    "anchor": "2. BAG TRACKING",
-    "title": "Sporing af kufferter",
-    "explain": "PLC'en ser ikke kufferterne, den tæller sig frem. ATR-scanneren læser mærket og lægger gate-nummeret i en kø (FIFO). Kufferter kan ikke overhale hinanden på et bånd, så det ældste nummer i køen hører altid til den næste kuffert, der når en klap. Klappen tager nummeret ud, og skal kufferten ikke af her, sendes nummeret videre til næste klaps kø. Det kaldes sporing (tracking) og bruges i alle sorteringsanlæg."
+    "anchor": "2. DIVERTER MONITORING",
+    "title": "Overvågning af klapper",
+    "explain": "PLC'en stoler ikke blindt på, at en klap gør, hvad den får besked på. Den sammenligner kommandoen med endestoppets melding: står klappen ikke helt ude 600 ms efter kommandoen, sidder den fast. Fejlen huskes, indtil operatøren trykker Reset. Klappen tages ud af drift, og kufferterne til den gate kører videre til problemstationen, mens resten af anlægget sorterer videre. Det kaldes degraderet drift og er bedre end at stoppe hele lufthavnen."
   },
   {
-    "anchor": "3. DIVERTERS AND INTERLOCKS",
+    "anchor": "3. BAG TRACKING",
+    "title": "Sporing af kufferter",
+    "explain": "PLC'en ser ikke kufferterne, den tæller sig frem. ATR-scanneren læser mærket og lægger gate-nummeret i en kø (FIFO). Kufferter kan ikke overhale hinanden på et bånd, så det ældste nummer i køen hører altid til den næste kuffert, der når en klap. Klappen tager nummeret ud, og skal kufferten ikke af her, sendes nummeret videre til næste klaps kø. Det kaldes sporing (tracking) og bruges i alle sorteringsanlæg. Sidder en klap fast, er dens kuffert kørt forbi uden at blive registreret i næste kø. PLC'en retter det ved at lægge kuffertens nummer i næste kø i det øjeblik, fejlen opdages, så sporingen ikke forskydes for alle de efterfølgende kufferter."
+  },
+  {
+    "anchor": "4. DIVERTERS AND INTERLOCKS",
     "title": "Klapper og interlock",
     "explain": "Når en kuffert bryder fotocellen før en klap, afgøres det med det samme, om klappen skal slå ud. Beslutningen tages for hver kuffert, så en klap aldrig står ude for den næste. En timer trækker klappen tilbage efter den sidste kuffert, men den tæller kun, mens båndet kører. Desuden er der en interlock: skal kufferten til en gate, hvor båndet er fuldt, holder hovedbåndet stille, indtil der er plads."
   },
   {
-    "anchor": "4. MERGE OF THE TWO CHECK-IN BELTS",
+    "anchor": "5. MERGE OF THE TWO CHECK-IN BELTS",
     "title": "Sammenfletning",
     "explain": "To skranker leverer til ét hovedbånd. PLC'en slipper kun én kuffert ind ad gangen, lader skrankerne skiftes, så ingen af dem venter for evigt, og kræver 700 ms frit flettepunkt med kørende bånd, før den næste må komme. Luften er nødvendig, fordi fotocellerne længere fremme skal kunne se mellemrummet mellem to kufferter inden for én scancyklus på 100 ms."
   },
   {
-    "anchor": "5. OUTPUTS",
+    "anchor": "6. ALARMS",
+    "title": "Alarmer",
+    "explain": "Hver alarm er én bit i PLC'en. HMI'en holder øje med bittene og fører alarmlisten med tidspunkter og kvittering, ligesom bitalarmer i et SCADA-system. Fejl betyder, at anlægget ikke kan køre normalt (nødstop, klap sidder fast), og de huskes, indtil der trykkes Reset. Advarsler betyder, at nogen bør kigge (kø på båndene, ulæseligt mærke), og de forsvinder af sig selv. Kø-alarmerne har en forsinkelse, så korte, normale ventetider ikke drukner operatøren i alarmer."
+  },
+  {
+    "anchor": "7. OUTPUTS",
     "title": "Udgange",
-    "explain": "Til sidst skrives alle udgange samlet. Hver motor og klap har præcis én linje, der bestemmer den, og det gør programmet let at fejlfinde: vil man vide, hvorfor et bånd står stille, kigger man på én linje. Lamperne viser drift og fejl for operatøren."
+    "explain": "Til sidst skrives alle udgange samlet. Hver motor og klap har præcis én linje, der bestemmer den, og det gør programmet let at fejlfinde: vil man vide, hvorfor et bånd står stille, kigger man på én linje. Lamperne viser drift og fejl for operatøren, og fejllampen lyser ved både nødstop og klapfejl."
   }
 ]
