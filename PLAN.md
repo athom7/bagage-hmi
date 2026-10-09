@@ -138,7 +138,7 @@ Se `CLAUDE.md`.
 ---
 
 ## Verifikation (hver fase)
-- `node --test tests/` → alle grønne (fra fase 2).
+- `node --test` → alle grønne (fra fase 2).
 - `python3 -m http.server 8080` og et Playwright-røgtest-script i scratchpad (bruger den forudinstallerede Chromium, committes ikke). Det tjekker: siden loader uden konsolfejl, kufferter når frem til den rigtige gate, nødstop stopper alle motorer inden for ét scan, og et klik åbner infopanelet. Screenshots sendes til dig.
 - Fase 3: Netlify-URL'en åbnes og testes på samme måde.
 

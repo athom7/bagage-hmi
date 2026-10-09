@@ -9,7 +9,8 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
 - Skal kunne deployes som statisk mappe på Netlify (`netlify.toml`, publish = ".").
 - Kør lokalt med en statisk server (fetch af program.st kræver http):
   `python3 -m http.server 8080` i mappen → http://localhost:8080
-- Tests: `node --test tests/` (Nodes indbyggede testrunner, ingen npm-pakker).
+- Tests: `node --test` (Nodes indbyggede testrunner finder selv `tests/*.test.js`, ingen npm-pakker).
+  Brug ikke `node --test tests/`: fra Node 22 læses mappen som et modul, og kørslen fejler.
 - Nye afhængigheder kræver min godkendelse først.
 
 ## Sprog
@@ -31,6 +32,7 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
   - **Showcase**: farverig og levende, til at vise frem (gate-farver, animation).
 - JavaScript sætter kun tilstandsklasser: `running`, `stopped`, `fault`, `blocked`, `extended`, `reading`,
   `bag-dest-0` … `bag-dest-3`, `bag-defect`, `selected` (og `on`/`off` for live-værdier i programvisningen).
+  Alarmlisten bruger `fault`, `warning`, `unack` og `cleared`.
   Temaet vælges med `data-theme` på `<html>` (`js/hmi/theme.js`).
 - Alle farver ligger som tokens i `css/hmi.css` under `:root[data-theme="operator"]` og
   `:root[data-theme="showcase"]`. **Ingen farveværdier i `js/`** – en test håndhæver det.
@@ -47,6 +49,13 @@ automationsteknikerlærlingeplads: logikken skal ligne rigtig PLC-tænkning, ikk
 - Fast cyklus på 100 ms: `readInputs()` → `execute()` → `writeOutputs()`. Rækkefølgen ændres aldrig.
 - Inputs er frosset under execute. Outputs skrives først til plant efter hele programmet har kørt.
 - Parse- eller kørselsfejl → CPU i STOP, alle outputs FALSE, fejl vises med linjenummer.
+
+## Alarmer
+- PLC'en sætter kun alarmbits (`ALM_` i `program.st`). Tekster, klasse (Fejl/Advarsel), tidsstempler og kvittering
+  ejes af HMI'en (`js/hmi/alarmlog.js`), ligesom bitalarmer i et HMI-projekt. HMI'en poller bittene hvert 200 ms,
+  så en alarmbit skal holde sin værdi i mindst ét sekund (brug TOF til korte hændelser).
+- Hvert `ALM_`-bit skal have en tekst og en operatørhandling i `ALARM_DEFS` (testene fejler ellers).
+- Kvittering (HMI) og Reset (PLC) er to forskellige ting: fejl nulstilles først med Reset, når årsagen er væk.
 
 ## Tag-konventioner
 - `I_` input, `Q_` output, `M_` intern hukommelse, `ALM_` alarmbit. Fx `I_PE_D1`, `Q_M_Main`, `Q_Div2`.
@@ -72,8 +81,9 @@ Funktionsblokke: TON, TOF, R_TRIG, F_TRIG, CTU, FIFO (FIFO er en forenkling, ikk
 
 ## Arbejdsgang
 - Projektet bygges i tre faser (se `PLAN.md`). Byg kun den aktuelle fase – spring ikke frem.
-- Status: fase 1 og 2 er færdige, inkl. visningstilstande og læringslag. Fase 3 (alarmer, finpudsning, README, deploy) er næste.
+- Status: fase 1 og 2 er færdige, inkl. visningstilstande og læringslag. Fase 3: trin 1 (alarmbits i ST) og
+  trin 2 (alarmliste og banner) er færdige. Næste er trin 3 (panelet "Fremprovokér fejl").
 - Hver ny ST-sprogfeature og funktionsblok skal have en test i `tests/`.
-- Kør `node --test tests/` og åbn siden lokalt uden konsolfejl før commit.
+- Kør `node --test` og åbn siden lokalt uden konsolfejl før commit.
 - Små, beskrivende commits på engelsk.
 - Kommentér ST-koden som en PLC-programmør ville: hvad netværket gør, og hvorfor (interlocks, sikkerhed).
