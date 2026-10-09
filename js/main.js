@@ -14,6 +14,8 @@ import { createStView, explainLines } from './hmi/stview.js';
 import { logicTagsOf } from './hmi/components.js';
 import { setupControls } from './hmi/controls.js';
 import { setupTheme } from './hmi/theme.js';
+import { createAlarmLog } from './hmi/alarmlog.js';
+import { createAlarmView } from './hmi/alarms.js';
 
 const PROGRAM_URL = 'plc/program.st';
 const params = new URLSearchParams(location.search);
@@ -131,6 +133,17 @@ fetch('plc/networks.da.json')
 if (startupError) stview.showError(startupError.message, startupError.line || 0);
 else plant.pressButton('start'); // as if the operator pressed Start when the page opened
 
+// ---- alarms ----
+// The HMI polls the alarm bits in its own update cycle (like an operator panel polling the PLC) and keeps
+// time stamps and acknowledgement itself. SYS_PLC_STOP is an HMI system alarm, not a PLC bit.
+const alarmLog = createAlarmLog();
+const alarmView = createAlarmView({ root: document.getElementById('alarms'), banner: document.getElementById('alarm-banner'), log: alarmLog });
+const readAlarm = (tag) => (tag === 'SYS_PLC_STOP' ? scan.state === 'STOP' : scan.program.getValue(tag) === true);
+function updateAlarms() {
+  alarmLog.update(readAlarm, Date.now());
+  alarmView.refresh();
+}
+
 // ---- status bar ----
 const el = (id) => document.getElementById(id);
 const statusEl = {
@@ -171,6 +184,7 @@ const drawPlant = () => renderer.update(panel.selection, { fault: !plant.operato
 function refreshUi() {
   drawPlant();
   updateStatus();
+  updateAlarms();
   panel.refresh();
   stview.update();
 }
@@ -187,6 +201,7 @@ function frame(now) {
   if (sinceUi > 0.2) {
     sinceUi = 0;
     updateStatus();
+    updateAlarms();
     panel.refresh();
     stview.update();
   }
@@ -197,4 +212,4 @@ scan.start(speed, () => !sim.paused);
 requestAnimationFrame(frame);
 
 // Debug handle for the browser console (and the smoke test): window.bagageHmi.plant etc.
-window.bagageHmi = { plant, image, scan, sim, stview };
+window.bagageHmi = { plant, image, scan, sim, stview, alarmLog };

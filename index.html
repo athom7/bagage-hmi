@@ -28,6 +28,7 @@
       <div><dt>Leveret</dt><dd id="st-delivered">0</dd></div>
       <div><dt>Afvist</dt><dd id="st-rejected">0</dd></div>
     </dl>
+    <button type="button" id="alarm-banner" class="alarm-banner" hidden title="Gå til alarmlisten"></button>
     <button type="button" id="theme-toggle" class="secondary theme-toggle" aria-pressed="false" title="Skift mellem operatørvisning (ISA-101) og showcase">Visning: Operatør</button>
     <div id="plc-error" class="plc-error" role="alert" hidden></div>
   </header>
@@ -87,9 +88,17 @@
     <textarea id="st-editor" class="st-editor" spellcheck="false" aria-label="Rediger ST-program" hidden></textarea>
   </section>
 
-  <section class="alarms" aria-label="Alarmer">
-    <h2>Alarmer</h2>
-    <p class="placeholder">Alarmlisten med tidsstempel og kvittering kommer i fase 3.</p>
+  <section class="alarms" id="alarms" aria-label="Alarmer">
+    <div class="alarms-head">
+      <h2>Alarmer <small id="alarm-count"></small></h2>
+      <button type="button" id="alarm-ack-all" class="secondary" disabled>Kvittér alle</button>
+    </div>
+    <p class="st-hint">Fejl skal også nulstilles med Reset i PLC'en, når årsagen er væk. Kvittering betyder kun, at operatøren har set alarmen. En alarm, der er gået, bliver stående, indtil den er kvitteret.</p>
+    <div id="alarm-body" class="alarm-body"><p class="placeholder">Ingen alarmer.</p></div>
+    <details class="alarm-history-wrap">
+      <summary>Historik (<span id="alarm-history-count">0</span>)</summary>
+      <div id="alarm-history" class="alarm-body"></div>
+    </details>
   </section>
 
   <script type="module" src="js/main.js"></script>
